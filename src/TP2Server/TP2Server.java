@@ -6,6 +6,7 @@
 package TP2Server;
 
 import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -119,14 +120,14 @@ public class TP2Server {
         {            
           
             BufferedInputStream in = null; 
-            PrintWriter out = null; 
+            BufferedOutputStream out = null; 
 
             System.out.println(" Nouvelle requète de " + myClientSocket.getInetAddress().getHostName()); 
 
             try 
             {                                
                 in = new BufferedInputStream(myClientSocket.getInputStream()); 
-                out = new PrintWriter(new OutputStreamWriter(myClientSocket.getOutputStream()));
+                out = new BufferedOutputStream(myClientSocket.getOutputStream());
 
                 
                 while(m_bRunThread) 
@@ -139,7 +140,7 @@ public class TP2Server {
                     { 
                        
                         System.out.print("Serveur a été stopé"); 
-                        out.println("Serveut a été stopé"); 
+                        out.write("Serveut a été stopé".getBytes()); 
                         out.flush(); 
                         m_bRunThread = false;   
 
@@ -155,22 +156,32 @@ public class TP2Server {
                         request += bufferstring;
                     }
                     if (request.contains("GET")) {
-                        Matcher m = Pattern.compile("GET ([\\w]+|.*) ").matcher(request);
+                        Matcher m = Pattern.compile("GET \\/(.*) ").matcher(request);
                         m.find();
                         String nomfichier = m.group(1);
                         System.out.println(nomfichier);
                         File f = new File(nomfichier);
                         if(f.exists() && !f.isDirectory()) {
-                            String response =   "HTTP/1.1 200 OK\n" +
-                                                "Server: BoLoos Server (Win64)\n" +
-                                                "Content-Type: text/html\n" +
-                                                "Connection: Closed";
+                            System.out.println("Fichier trouvé!");
                             FileInputStream fs = new FileInputStream(f);
                             long size = f.length();
-                            while (fs.available() > 0){
-                                buffer = new byte[512];
+                            String header = "HTTP/1.1 200 OK\n" +
+                                            "Server: BoLoos Server (Win64)\n" +
+                                            "Content-Type: "+getMimeType(f.getName())+"\n" +
+                                            "Filename: "+f.getName()+"\n" +
+                                            "Content-length: "+size+"\n\n";
+                            out.write(header.getBytes());
+                            
+                            int buffersize = fs.available();
+                            while (buffersize > 0){
+                                buffer = new byte[buffersize];
                                 fs.read(buffer);
+                                out.write(buffer);
+                                buffersize = fs.available();
                             }
+                            fs.close();
+                            out.flush();
+                            
                         }
                     }
 
@@ -200,5 +211,33 @@ public class TP2Server {
 
 
     }
+    
+    private String getMimeType(String filename) {
+        String result = "text/html";
+        Matcher m = Pattern.compile("^.*\\.([a-zA-Z0-9]*)$").matcher(filename);
+        String extension;
+        if (m.find()) {
+            extension = m.group(1);
+        } else {
+            return result;
+        }
+        extension = extension.toLowerCase();
+        //System.out.println("Extension : "+extension);
+        switch(extension) {
+            case "jpg" :
+            case "jpeg" :
+                result = "image/jpeg";
+                break;
+            case "png" :
+                result = "image/png";
+                break;
+            case "css" :
+                result = "text/css";
+                break;
+            default :
+                break;
+        }
+        return result;
+    } 
 
 }
