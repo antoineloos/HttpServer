@@ -126,12 +126,12 @@ public class TP2Server {
 
             try 
             {                                
-                in = new BufferedInputStream(myClientSocket.getInputStream()); 
+                in = new BufferedInputStream(myClientSocket.getInputStream());
                 out = new BufferedOutputStream(myClientSocket.getOutputStream());
 
                 
-                while(m_bRunThread) 
-                {                    
+                /*while(m_bRunThread) 
+                {    */                
                   
                     //String clientCommand = in.readLine();
                     //System.out.println("Le client dit :" + clientCommand);
@@ -139,8 +139,8 @@ public class TP2Server {
                     if(!ServerOn) 
                     { 
                        
-                        System.out.print("Serveur a été stopé"); 
-                        out.write("Serveut a été stopé".getBytes()); 
+                        System.out.print("Serveur a été stoppé"); 
+                        out.write("Serveur a été stoppé".getBytes()); 
                         out.flush(); 
                         m_bRunThread = false;   
 
@@ -156,34 +156,40 @@ public class TP2Server {
                         request += bufferstring;
                     }
                     if (request.contains("GET")) {
+                        //System.out.println(request);
                         Matcher m = Pattern.compile("GET \\/(.*) ").matcher(request);
                         m.find();
                         String nomfichier = m.group(1);
                         System.out.println(nomfichier);
                         File f = new File(nomfichier);
+                        String code;
                         if(f.exists() && !f.isDirectory()) {
                             System.out.println("Fichier trouvé!");
-                            FileInputStream fs = new FileInputStream(f);
-                            long size = f.length();
-                            String header = "HTTP/1.1 200 OK\n" +
-                                            "Server: BoLoos Server (Win64)\n" +
-                                            "Content-Type: "+getMimeType(f.getName())+"\n" +
-                                            "Filename: "+f.getName()+"\n" +
-                                            "Content-length: "+size+"\n\n";
-                            out.write(header.getBytes());
-                            
-                            int buffersize = fs.available();
-                            while (buffersize > 0){
-                                buffer = new byte[buffersize];
-                                fs.read(buffer);
-                                out.write(buffer);
-                                buffersize = fs.available();
-                            }
-                            fs.close();
-                            out.flush();
-                            
+                            code = "200 OK";
+                        } else {
+                            System.out.println("Fichier non trouvé!");
+                            code = "404";
+                            f = new File("404.html");
                         }
-                    }
+                        FileInputStream fs = new FileInputStream(f);
+                        long size = f.length();
+                        String header = "HTTP/1.1 " + code + "\n" +
+                                        "Server: BoLoos Server (Win64)\n" +
+                                        "Content-Type: "+getMimeType(f.getName())+"\n" +
+                                        "Filename: "+f.getName()+"\n" +
+                                        "Content-length: "+size+"\n\n";
+                        out.write(header.getBytes());
+
+                        int buffersize = fs.available();
+                        while (buffersize > 0){
+                            buffer = new byte[buffersize];
+                            fs.read(buffer);
+                            out.write(buffer);
+                            buffersize = fs.available();
+                        }
+                        fs.close();
+                        out.flush();
+                    
 
                     
                 } 
@@ -194,6 +200,7 @@ public class TP2Server {
             } 
             finally 
             { 
+                
                 // Clean up 
                 try 
                 {                    
@@ -233,6 +240,9 @@ public class TP2Server {
                 break;
             case "css" :
                 result = "text/css";
+                break;
+            case "js" :
+                result = "application/javascript";
                 break;
             default :
                 break;
