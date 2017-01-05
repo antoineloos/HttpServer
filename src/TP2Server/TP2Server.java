@@ -111,10 +111,11 @@ public class TP2Server {
                 String request = "";
                 byte[] buffer;
                 int tempo = 100;
-                /*while (in.available() == 0 && tempo > 0) {
+                while (in.available() == 0 && tempo > 0) {
                     sleep(1);
+                    //System.out.println(tempo);
                     tempo--;
-                }*/
+                }
                 while (in.available() > 0) {
                     buffer = new byte[in.available()];
                     in.read(buffer);
